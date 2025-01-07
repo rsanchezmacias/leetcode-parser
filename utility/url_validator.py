@@ -1,6 +1,6 @@
 from urllib.parse import urlparse
-from exceptions import InvalidInputException
-from constants import UserMessages
+from errors.exceptions import InvalidInputException
+from models.constants import UserMessages
 
 class URLValidator:
     

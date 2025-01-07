@@ -1,8 +1,8 @@
-from file_manager import FileManager
-from leetcode_parser import LeetcodeParser
-from exceptions import InvalidInputException
-from terminal_input import TerminalInput
-from url_validator import URLValidator
+from services.file_manager import FileManager
+from services.leetcode_parser import LeetcodeParser
+from errors.exceptions import InvalidInputException
+from utility.terminal_input import TerminalInput
+from utility.url_validator import URLValidator
 from yaml import YAMLError
 
 # Initialize terminal input handler 

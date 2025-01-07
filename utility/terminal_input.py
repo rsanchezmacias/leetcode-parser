@@ -1,6 +1,6 @@
 import sys
-from constants import UserMessages
-from exceptions import InvalidInputException
+from models.constants import UserMessages
+from errors.exceptions import InvalidInputException
 
 VALID_INPUT_LENGHT = 2
 
