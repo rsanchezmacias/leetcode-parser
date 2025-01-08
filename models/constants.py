@@ -12,10 +12,17 @@ class DOMLabels:
     DIFFICULTY = "text-difficulty"
     DESCRIPTION_BODY = "description_content"
     EXAMPLE = "example"
+    CODE_LINES_CONTENT = "lines-content"
     
     # Tags 
     TAG_PARAGRAPH = 'p'
     TAG_UNSORTED_LIST = 'u'
+    
+    # Code languages model class. It may change in the future
+    CODE_LANGUAGE_MODAL = "z-modal"
+    
+    # Avaiable languages 
+    CODE_LANGUAGES = ["C++", "Java", "Python", "Python3", "Swift"]
     
 @dataclass(frozen=True)
 class Configs: 

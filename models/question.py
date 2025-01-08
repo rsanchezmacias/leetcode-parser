@@ -8,3 +8,4 @@ class Question:
         self.difficulty = None 
         self.description = None 
         self.constraints = None 
+        self.code = None

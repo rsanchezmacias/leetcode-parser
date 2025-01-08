@@ -3,8 +3,8 @@ from models.constants import DOMLabels
 from models.question import Question
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
+from services.language_selector import LanguageSelector
 
 class LeetcodeParser:
     
@@ -17,11 +17,15 @@ class LeetcodeParser:
         # Initialize WebDriver
         self.driver = webdriver.Chrome(options=options)  # Use the appropriate driver for your browser
         self.driver.implicitly_wait(0.5)
+        
+        # Utility helper 
+        self.language_selector = LanguageSelector()
     
     def parse(self, url: str) -> Question:
         question = Question()
         
         self.driver.get(url)
+        self.language_selector.swap_to_correct_language(driver=self.driver, language="Python3")
         
         # Relative xpath for a div with a class value that contains title
         title = self.driver.find_element(By.XPATH, f"//div[contains(@class, '{DOMLabels.TITLE}')]").text
@@ -29,6 +33,13 @@ class LeetcodeParser:
         difficulty = self.driver.find_element(By.XPATH, f"//div[contains(@class, '{DOMLabels.DIFFICULTY}')]").text
         # Get the content without examples nor follow-up
         description_content = self.get_description_content()
+        # Get the code from the editor 
+        code_template = self.driver.find_element(By.CLASS_NAME, DOMLabels.CODE_LINES_CONTENT)
+        
+        question.title = title
+        question.difficulty = difficulty
+        question.description = description_content
+        question.code = code_template
         
         return question
     
@@ -56,6 +67,7 @@ class LeetcodeParser:
             raw_description += element.text
             
         return raw_description
-    
+        
     def clean_up(self):
         self.driver.quit()
+    
