@@ -1,5 +1,6 @@
 from services.file_manager import FileManager
 from services.leetcode_parser import LeetcodeParser
+from services.question_formatter import QuestionFormatter
 from errors.exceptions import InvalidInputException
 from utility.terminal_input import TerminalInput
 from utility.url_validator import URLValidator
@@ -13,6 +14,9 @@ url_validator = URLValidator()
 
 # File manager for laoding user configurations
 file_manager = FileManager()
+
+# Utility service to format the question information 
+question_formatter = QuestionFormatter()
 
 # Function to clean up app state 
 def clean_up():
@@ -30,7 +34,8 @@ def main():
     
     try:
         parser = LeetcodeParser(config=driver_config)
-        question = parser.parse(url=raw_url)
+        raw_question = parser.parse(url=raw_url)
+        formatted_question = question_formatter.format_question(raw_question)
         demo = input("waiting...")
         
     finally:

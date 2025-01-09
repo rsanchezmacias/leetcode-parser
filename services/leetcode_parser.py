@@ -39,7 +39,7 @@ class LeetcodeParser:
         question.title = title
         question.difficulty = difficulty
         question.description = description_content
-        question.code = code_template
+        question.code = code_template.text
         
         return question
     
