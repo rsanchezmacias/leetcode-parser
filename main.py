@@ -36,6 +36,7 @@ def main():
         parser = LeetcodeParser(config=driver_config)
         raw_question = parser.parse(url=raw_url)
         formatted_question = question_formatter.format_question(raw_question)
+        file_manager.write_question_to_template(formatted_question)
         demo = input("waiting...")
         
     finally:

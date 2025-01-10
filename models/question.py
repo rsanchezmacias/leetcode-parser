@@ -9,7 +9,14 @@ class Question:
         self.description = None 
         self.constraints = None 
         self.code = None
-            
+        
+    def camelCaseTitle(self) -> str: 
+        if not self.title:
+            return "" 
+        components = self.title.split()
+        camel_case_title = ''.join(component.capitalize() for component in components)
+        return camel_case_title
+    
     def copy_from_raw(self):
         """
         Copy the current instance with fields that are constant between transformations.
@@ -24,3 +31,4 @@ class Question:
         copy_question.description = self.description
 
         return copy_question
+    

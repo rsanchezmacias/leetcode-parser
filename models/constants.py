@@ -30,3 +30,24 @@ class Configs:
     CONFIG_FIELD = "config"
     CONFIG_DRIVER_USER_DATA_FIELD = "user_data_dir"
     CONFIG_DRIVER_PROFILE_NAME_FIELD = "profile_directory"
+    
+@dataclass(frozen=True)
+class FilesInfo:
+    TEMPLATES_DIRECTORY = "templates"
+    PYTHON_TEMPLATE = "base_py.j2"
+    SWIFT_TEMPLATE = "base_swift.j2"
+    
+    # Constants to construct filename
+    QUESTION_PREFIX = "q"
+    PYTHON_EXTENSION = ".py"
+    SWIFT_EXTENSION = ".swift"
+    
+    OUTPUT_HOME_DIRECTORY = "generated/"
+    
+@dataclass(frozen=True)
+class TemplateInfo:
+    NUMBER = "number"
+    TITLE = "title"
+    DESCRIPTION = "description"
+    CODE = "code"
+    
