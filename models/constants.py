@@ -2,8 +2,10 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class UserMessages: 
-    INVALID_INPUT_SIZE = "Please just enter a URL for the question you want to answer"
+    INVALID_INPUT_SIZE = "Please enter a URL for the question you want to answer and a language preference (swift or python)"
     INVALID_INPUT_TYPE = "Please enter a valid URL for the question"
+    INVALID_INPUT_LANGUAGE = "Please a valid language (-s for swift, or -p python)"
+    VALID_INPUT_EXAMPLE = "Example: python -s main.py www.valid_question_url.com"
 
 @dataclass(frozen=True)
 class DOMLabels:

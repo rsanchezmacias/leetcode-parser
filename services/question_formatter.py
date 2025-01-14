@@ -20,3 +20,4 @@ class QuestionFormatter:
         components = raw_title.split(".")
         number, title = components[0].strip(), components[1].strip()
         return (number, title)
+    

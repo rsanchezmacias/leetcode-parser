@@ -1,4 +1,5 @@
 from models.constants import DOMLabels
+from models.language import Language
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, TimeoutException, ElementNotInteractableException
 from selenium.webdriver.common.by import By
@@ -7,7 +8,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 class LanguageSelector:
     
-    def swap_to_correct_language(self, driver: webdriver.Chrome, language: str) -> None: 
+    def swap_to_correct_language(self, driver: webdriver.Chrome, language: Language) -> None:
+        language_label = language.site_language()
+        
         # Find the select-language popover button 
         code_language_dropdown = driver.find_element(By.XPATH, self.build_xpath_query_to_find_code_language_button())
         
@@ -26,7 +29,7 @@ class LanguageSelector:
             return
         
         try: 
-            code_language_element = code_languages_popover.find_element(By.XPATH, f'//div[contains(text(), "{language}")]') 
+            code_language_element = code_languages_popover.find_element(By.XPATH, f'//div[contains(text(), "{language_label}")]') 
             code_language_element.click()
         except (NoSuchElementException, ElementNotInteractableException) as e:
             print(e)

@@ -1,5 +1,6 @@
 from models.driver_config import DriverConfig
 from models.constants import DOMLabels
+from models.language import Language
 from models.question import Question
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
@@ -21,11 +22,11 @@ class LeetcodeParser:
         # Utility helper 
         self.language_selector = LanguageSelector()
     
-    def parse(self, url: str) -> Question:
+    def parse(self, url: str, language: Language) -> Question:
         question = Question()
         
         self.driver.get(url)
-        self.language_selector.swap_to_correct_language(driver=self.driver, language="Python3")
+        self.language_selector.swap_to_correct_language(driver=self.driver, language=language)
         
         # Relative xpath for a div with a class value that contains title
         title = self.driver.find_element(By.XPATH, f"//div[contains(@class, '{DOMLabels.TITLE}')]").text
