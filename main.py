@@ -1,7 +1,8 @@
+from services.app_launcher import AppLauncher
 from services.file_manager import FileManager
 from services.leetcode_parser import LeetcodeParser
 from services.question_formatter import QuestionFormatter
-from errors.exceptions import InvalidInputException
+from errors.exceptions import InvalidInputException, FilePathNotFound, FailedToOpenException
 from models.constants import UserMessages
 from utility.terminal_input import TerminalInput
 from utility.url_validator import URLValidator
@@ -18,6 +19,9 @@ file_manager = FileManager()
 
 # Utility service to format the question information 
 question_formatter = QuestionFormatter()
+
+# Service to launch the output file
+app_launcher = AppLauncher()
 
 # Function to clean up app state 
 def clean_up():
@@ -52,12 +56,18 @@ def main():
             language=language,
             path=app_config.questions_path_directory
         )
-        
-        
-        demo = input("waiting...")
-        
-    finally:
+    except Exception as e:
+        print(e)
         clean_up()
+        
+    try: 
+        app_launcher.open(path=output_path, language=language)
+    except (FilePathNotFound, FailedToOpenException) as e: 
+        print(e)
+        clean_up()
+    
+    # Close the driver 
+    clean_up()
 
 if __name__ == "__main__":
     main()

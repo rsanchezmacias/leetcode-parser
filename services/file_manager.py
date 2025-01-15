@@ -46,17 +46,18 @@ class FileManager:
         # Write file
         filled_content = template.render(context)
         filename = FilesInfo.QUESTION_PREFIX + question.camelCaseTitle() + language.file_extension()
-        self.write_file(content=filled_content, directory=question_directory, filename=filename)
+        return self.write_file(content=filled_content, directory=question_directory, filename=filename)
         
-    def write_file(self, content: str, directory: str, filename: str):
+    def write_file(self, content: str, directory: str, filename: str) -> str:
         self.create_directory_if_needed(directory)
         output_path = os.path.join(directory, filename)
         
         if os.path.exists(output_path):
-            return
+            return output_path
         
         with open(output_path, 'w') as output_file:
             output_file.write(content)
+            return output_path
         
     def create_directory_if_needed(self, directory: str):
         if not os.path.exists(directory):
