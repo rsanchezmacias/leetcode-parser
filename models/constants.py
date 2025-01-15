@@ -32,6 +32,7 @@ class Configs:
     CONFIG_FIELD = "config"
     CONFIG_DRIVER_USER_DATA_FIELD = "user_data_dir"
     CONFIG_DRIVER_PROFILE_NAME_FIELD = "profile_directory"
+    CONFIG_QUESTIONS_HOME_PATH_FIELD = "questions_home_directory"
     
 @dataclass(frozen=True)
 class FilesInfo:
@@ -43,8 +44,6 @@ class FilesInfo:
     QUESTION_PREFIX = "q"
     PYTHON_EXTENSION = ".py"
     SWIFT_EXTENSION = ".swift"
-    
-    OUTPUT_HOME_DIRECTORY = "generated/"
     
 @dataclass(frozen=True)
 class TemplateInfo:

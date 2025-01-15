@@ -38,16 +38,22 @@ def main():
         
     try: 
         url_validator.validate_url(raw_url)
-        driver_config = file_manager.get_driver_config()
+        app_config = file_manager.get_app_config()
     except InvalidInputException as e: 
         print(e)
         clean_up() 
     
     try:
-        parser = LeetcodeParser(config=driver_config)
+        parser = LeetcodeParser(config=app_config)
         raw_question = parser.parse(url=raw_url, language=language)
         formatted_question = question_formatter.format_question(raw_question)
-        file_manager.write_question_to_template(formatted_question)
+        output_path = file_manager.write_question_to_template(
+            formatted_question,
+            language=language,
+            path=app_config.questions_path_directory
+        )
+        
+        
         demo = input("waiting...")
         
     finally:

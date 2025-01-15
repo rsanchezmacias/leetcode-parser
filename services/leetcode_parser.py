@@ -1,4 +1,4 @@
-from models.driver_config import DriverConfig
+from models.driver_config import AppConfig
 from models.constants import DOMLabels
 from models.language import Language
 from models.question import Question
@@ -9,7 +9,7 @@ from services.language_selector import LanguageSelector
 
 class LeetcodeParser:
     
-    def __init__(self, config: DriverConfig):
+    def __init__(self, config: AppConfig):
         # Initialize browser options to driver
         options = webdriver.ChromeOptions() 
         options.add_argument(f"--user-data-dir={config.user_data_directory}")
@@ -46,28 +46,7 @@ class LeetcodeParser:
     
     def get_description_content(self) -> str:
         description_content = self.driver.find_element(By.XPATH, f"//div[@data-track-load='{DOMLabels.DESCRIPTION_BODY}']")
-        
-        filtered_elements = []
-        children_elements = description_content.find_elements(By.XPATH, "./*")
-        
-        for element in children_elements:
-            try: 
-                if element.tag_name != DOMLabels.TAG_PARAGRAPH and element.tag_name != DOMLabels.TAG_UNSORTED_LIST:
-                    continue
-                
-                strong_element = element.find_element(By.XPATH, f"./strong[@class='{DOMLabels.EXAMPLE}']")
-                if strong_element:
-                    continue
-                
-                filtered_elements.append(element)
-            except NoSuchElementException:
-                filtered_elements.append(element)
-            
-        raw_description = ""
-        for element in filtered_elements:
-            raw_description += element.text
-            
-        return raw_description
+        return description_content.text
         
     def clean_up(self):
         self.driver.quit()

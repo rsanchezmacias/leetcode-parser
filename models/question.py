@@ -17,6 +17,9 @@ class Question:
         camel_case_title = ''.join(component.capitalize() for component in components)
         return camel_case_title
     
+    def difficulty_directory(self) -> str: 
+        return self.difficulty.lower()
+    
     def copy_from_raw(self):
         """
         Copy the current instance with fields that are constant between transformations.

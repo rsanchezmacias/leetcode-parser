@@ -1,3 +1,4 @@
 config:
   user_data_dir: "driver_profile"
   profile_directory: "SeleniumProfile"
+  questions_home_directory: ""
