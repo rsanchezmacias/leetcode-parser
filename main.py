@@ -29,6 +29,9 @@ def clean_up():
 
 # Main function
 def main():
+    
+    file_manager.set_working_directory()
+    
     try:
         raw_url = terminal.get_url_input()
         language = terminal.get_language_preference()

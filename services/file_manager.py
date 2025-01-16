@@ -8,6 +8,11 @@ import yaml
 
 class FileManager: 
     
+    def set_working_directory(self): 
+        current_module_directory = os.path.dirname(os.path.abspath(__file__))
+        parent_dir = os.path.dirname(current_module_directory)
+        os.chdir(parent_dir)
+    
     def get_app_config(self) -> AppConfig:
         with open(Configs.CONFIG_FILE, "r") as file: 
             data = yaml.safe_load(file)
