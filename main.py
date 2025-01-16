@@ -65,6 +65,7 @@ def main():
         
     try: 
         app_launcher.open(path=output_path, language=language)
+        print(f"File: {output_path}")
     except (FilePathNotFound, FailedToOpenException) as e: 
         print(e)
         clean_up()
