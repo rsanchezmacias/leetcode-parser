@@ -1,3 +1,4 @@
+import time
 from models.constants import DOMLabels
 from models.language import Language
 from selenium import webdriver
@@ -16,6 +17,7 @@ class LanguageSelector:
         
         try:
             code_language_dropdown.click()
+            time.sleep(1)  
         except Exception as e: 
             print(e)
             return 
@@ -31,6 +33,7 @@ class LanguageSelector:
         try: 
             code_language_element = code_languages_popover.find_element(By.XPATH, f'//div[contains(text(), "{language_label}")]') 
             code_language_element.click()
+            time.sleep(1)  
         except (NoSuchElementException, ElementNotInteractableException) as e:
             print(e)
             return 
