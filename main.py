@@ -8,70 +8,75 @@ from utility.terminal_input import TerminalInput
 from utility.url_validator import URLValidator
 from yaml import YAMLError
 
-# Initialize terminal input handler 
-terminal = TerminalInput()
+def clean_up(exit_code=1):
+    """Cleans up resources and exits the application."""
+    exit(exit_code)
 
-# Validate URL input from the user
-url_validator = URLValidator()
-
-# File manager for laoding user configurations
-file_manager = FileManager()
-
-# Utility service to format the question information 
-question_formatter = QuestionFormatter()
-
-# Service to launch the output file
-app_launcher = AppLauncher()
-
-# Function to clean up app state 
-def clean_up():
-    exit()
-
-# Main function
-def main():
-    
-    file_manager.set_working_directory()
-    
+def get_user_inputs(terminal, url_validator):
+    """Gets and validates user inputs."""
     try:
         raw_url = terminal.get_url_input()
         language = terminal.get_language_preference()
-    except (InvalidInputException, ValueError) as e:
-        print(e)
-        print(UserMessages.VALID_INPUT_EXAMPLE)
-        clean_up()
-    except YAMLError as e: 
-        print(e)
-        clean_up() 
-        
-    try: 
         url_validator.validate_url(raw_url)
-        app_config = file_manager.get_app_config()
-    except InvalidInputException as e: 
-        print(e)
-        clean_up() 
-    
+        return raw_url, language
+    except InvalidInputException as e:
+        print(f"Input Error: {e}\n{UserMessages.VALID_INPUT_EXAMPLE}")
+        clean_up()
+    except YAMLError as e:
+        print(f"Configuration Error: {e}")
+        clean_up()
+
+def load_configuration(file_manager):
+    """Loads application configuration."""
     try:
-        parser = LeetcodeParser(config=app_config)
+        return file_manager.get_app_config()
+    except YAMLError as e:
+        print(f"Configuration Error: {e}")
+        clean_up()
+
+def parse_question(parser, raw_url, language, question_formatter, file_manager, app_config):
+    """Parses the question and writes it to a template."""
+    try:
         raw_question = parser.parse(url=raw_url, language=language)
         formatted_question = question_formatter.format_question(raw_question)
         output_path = file_manager.write_question_to_template(
-            formatted_question,
+            question=formatted_question,
             language=language,
             path=app_config.questions_path_directory
         )
+        return output_path
     except Exception as e:
-        print(e)
+        print(f"Error during question parsing or writing: {e}")
         clean_up()
-        
-    try: 
+
+def open_generated_file(app_launcher, output_path, language):
+    """Opens the generated file in the appropriate application."""
+    try:
         app_launcher.open(path=output_path, language=language)
-        print(f"File: {output_path}")
-    except (FilePathNotFound, FailedToOpenException) as e: 
-        print(e)
+        print(f"File successfully created and opened: {output_path}")
+    except (FilePathNotFound, FailedToOpenException) as e:
+        print(f"File Error: {e}")
         clean_up()
+
+def main():
+    file_manager = FileManager()
+    terminal = TerminalInput()
+    url_validator = URLValidator()
+    question_formatter = QuestionFormatter()
+    app_launcher = AppLauncher()
     
-    # Close the driver 
-    clean_up()
+    # Set the working directory
+    file_manager.set_working_directory()
+    
+    raw_url, language = get_user_inputs(terminal, url_validator)
+    app_config = load_configuration(file_manager)
+
+    parser = LeetcodeParser(config=app_config)
+    output_path = parse_question(parser, raw_url, language, question_formatter, file_manager, app_config)
+    open_generated_file(app_launcher, output_path, language)
+
+    # Ensure cleanup after execution
+    clean_up(exit_code=0)
 
 if __name__ == "__main__":
     main()
