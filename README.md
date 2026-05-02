@@ -1,75 +1,64 @@
-# Leetcode Parser
+# LeetCode Formatter
 
-**Leetcode Parser** is a Python-based tool designed to streamline your coding preparation process. It scrapes problem data from Leetcode, including the question title, description, and initial method stub, and automatically generates a starter file in your preferred programming language (`*.py` for Python or `*.swift` for Swift). This eliminates the manual effort of copying problem details and setting up the environment, allowing you to focus entirely on solving the problem.
+A macOS app that scrapes a LeetCode problem and drops a pre-filled starter file into a local directory, ready to open in your editor. Supports Python and Swift.
 
-## Frameworks and Tools Used
+## Prerequisites
 
-This project leverages the following frameworks and libraries:
+- Python 3.13+ with Tcl/Tk support
+- Google Chrome + ChromeDriver matching your Chrome version
+- `pip install -r requirements.txt && pip install py2app`
 
-- **Selenium**: Automates the web browser to navigate Leetcode, select the desired programming language, and extract problem details dynamically.
-- **Jinja2**: Manages templates for generating starter files with placeholders for the question's title, description, and initial code stub.
-- **PyYAML**: Parses configuration files that manage user preferences, such as directories for storing generated files and browser profiles.
+### pyenv + Tcl/Tk (one-time fix)
 
-## High-Level Overview of Steps
+If `import tkinter` fails, reinstall Python with Tcl/Tk support:
 
-### 1. Setup and Configuration
-- The app begins by loading configurations from a YAML file (`config.yaml`). Settings include:
-  - Browser profiles
-  - User data directory
-  - Directory paths for storing generated files
+```bash
+brew install tcl-tk
 
-### 2. Input Validation
-- Command-line arguments are used to specify:
-  - The Leetcode problem URL
-  - The desired programming language
-- Input validation ensures:
-  - The URL is well-formed
-  - The language is supported
+LDFLAGS="-L$(brew --prefix tcl-tk)/lib" \
+CPPFLAGS="-I$(brew --prefix tcl-tk)/include" \
+PKG_CONFIG_PATH="$(brew --prefix tcl-tk)/lib/pkgconfig" \
+PYTHON_CONFIGURE_OPTS="--with-tcltk-includes='-I$(brew --prefix tcl-tk)/include' \
+  --with-tcltk-libs='-L$(brew --prefix tcl-tk)/lib -ltcl8.6 -ltk8.6'" \
+pyenv install 3.13.0 --force
+```
 
-### 3. Scraping the Problem
-- Using Selenium, the app:
-  - Navigates to the Leetcode problem URL.
-  - Selects the desired programming language in the code editor.
-  - Extracts the problem title, difficulty level, description, and initial code stub.
+## Build & Install
 
-### 4. Formatting and File Generation
-- The scraped data is passed to a formatter that structures the information.
-- A new file is generated using Jinja2 templates.
-- The file is stored in a directory structure based on the problem's difficulty and title.
+```bash
+python setup_app.py py2app
+cp -r "dist/LeetCode Formatter.app" /Applications/
+```
 
-### 5. Opening the File
-- The generated file is automatically opened in:
-  - **Xcode** (for Swift)
-  - **Visual Studio Code** (for Python)
+## First Launch
 
-## How to Use
+A folder picker will appear — choose where your LeetCode files should be saved. That's the only setup required. Everything else (Chrome profile, config) is handled automatically under `~/Library/Application Support/LeetCodeFormatter/`.
 
-1. **Clone the Repository**:
-    ```bash
-    git clone https://github.com/your-username/leetcode-parser.git
-    cd leetcode-parser
-    ```
+## Usage
 
-2. **Install Dependencies**:
-    ```bash
-    pip install -r requirements.txt
-    ```
+1. Paste a LeetCode problem URL
+2. Select **Python** or **Swift**
+3. Click **Parse Problem** — the status log shows live progress
+4. If not logged in, a dialog appears — log in in the Chrome window then click **I'm logged in — Continue**
+5. When done, click **Close Chrome**
 
-3. **Set Up the Configuration File**:
-    - Create a `config.yaml` file in the `resources` directory:
-      ```yaml
-      config:
-        user_data_dir: "/path/to/your/chrome/user/data"
-        profile_directory: "Default"
-        questions_home_directory: "/path/to/store/questions"
-      ```
+Use **Change** to update the output folder, or **Open in Finder** to open it at any time.
 
-4. **Run the Script**:
-    - Use the command-line arguments to specify the problem URL and language preference:
-      ```bash
-      python main.py -p https://leetcode.com/problems/two-sum/
-      ```
+## Output Structure
 
-5. **Generated File**:
-    - The script will generate a file for the problem and open it in your preferred editor.
+```
+<output folder>/
+└── <difficulty>/
+    └── q<number>/
+        └── q<CamelCaseTitle>.<ext>
+```
 
+> The app only creates files — it never modifies or deletes existing content in your output folder.
+
+## Rebuild After Code Changes
+
+```bash
+rm -rf build dist
+python setup_app.py py2app
+cp -r "dist/LeetCode Formatter.app" /Applications/
+```

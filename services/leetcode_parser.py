@@ -16,12 +16,14 @@ class LeetcodeParser:
     Parses question data from a LeetCode problem page using Selenium.
     """
 
-    def __init__(self, config: AppConfig):
+    def __init__(self, config: AppConfig, auth_prompt_fn=None):
         """
         Initializes the LeetcodeParser with browser configuration.
 
         Args:
             config (AppConfig): Configuration object containing user data and profile information.
+            auth_prompt_fn (callable, optional): Called when the user needs to log in manually.
+                Should block until the user has logged in. Defaults to a CLI input() prompt.
         """
         # Initialize browser options
         options = webdriver.ChromeOptions()
@@ -29,8 +31,13 @@ class LeetcodeParser:
         options.add_argument(f"--profile-directory={config.profile_name}")
 
         # Initialize WebDriver
-        self.driver = webdriver.Chrome(options=options)  # Use the appropriate driver for your browser
+        self.driver = webdriver.Chrome(options=options)
         self.driver.implicitly_wait(0.5)
+
+        # Auth prompt — callers can inject a GUI dialog; falls back to CLI input()
+        self._auth_prompt_fn = auth_prompt_fn or (
+            lambda: input("Press Enter here once you are logged in...")
+        )
 
         # Utility helper
         self.language_selector = LanguageSelector()
@@ -140,7 +147,7 @@ class LeetcodeParser:
 
         print("\n⚠️  Not logged in to LeetCode.")
         print("Please log in inside the Chrome window that just opened.")
-        input("Press Enter here once you are logged in...")
+        self._auth_prompt_fn()
 
         # Navigate back to the problem and wait for the page to settle
         self.driver.get(url)
