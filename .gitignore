@@ -11,5 +11,7 @@ driver_profile
 # py2app build output
 build/
 dist/
+icon.icns
+icon.iconset/
 
 
