@@ -1,10 +1,13 @@
+import time
+
 from models.constants import DOMLabels
 from models.driver_config import AppConfig
 from models.language import Language
 from models.question import Question
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
 from services.language_selector import LanguageSelector
 
 
@@ -51,6 +54,9 @@ class LeetcodeParser:
         # Open the problem page
         self.driver.get(url)
 
+        # Ensure the user is logged in before proceeding
+        self._ensure_logged_in(url)
+
         # Set the desired programming language
         self.language_selector.swap_to_correct_language(driver=self.driver, language=language)
 
@@ -95,6 +101,59 @@ class LeetcodeParser:
             return description_element.text
         except NoSuchElementException:
             raise NoSuchElementException("Failed to locate the problem description.")
+
+    def _is_logged_in(self) -> bool:
+        """
+        Checks whether the user is currently logged into LeetCode by looking
+        for a login-page URL redirect or a visible Sign In button in the nav.
+
+        Returns:
+            bool: True if logged in, False otherwise.
+        """
+        # Redirected to the login page
+        if "/accounts/login" in self.driver.current_url:
+            return False
+
+        # Sign In button visible in the nav — only present when logged out
+        try:
+            self.driver.find_element(
+                By.XPATH,
+                "//*[self::a or self::button][contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'sign in')]"
+            )
+            return False
+        except NoSuchElementException:
+            return True
+
+    def _ensure_logged_in(self, url: str) -> None:
+        """
+        If not logged in, pauses and prompts the user to log in manually
+        in the open Chrome window, then re-navigates to the problem URL.
+
+        Args:
+            url (str): The original problem URL to return to after login.
+
+        Raises:
+            Exception: If the user is still not logged in after the manual login attempt.
+        """
+        if self._is_logged_in():
+            return
+
+        print("\n⚠️  Not logged in to LeetCode.")
+        print("Please log in inside the Chrome window that just opened.")
+        input("Press Enter here once you are logged in...")
+
+        # Navigate back to the problem and wait for the page to settle
+        self.driver.get(url)
+        WebDriverWait(self.driver, 10).until(
+            lambda d: "/accounts/login" not in d.current_url
+        )
+
+        if not self._is_logged_in():
+            self.clean_up()
+            raise Exception(
+                "Still not logged in after manual login. "
+                "Please re-run the script and try again."
+            )
 
     def clean_up(self):
         """

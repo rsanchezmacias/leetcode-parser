@@ -72,11 +72,13 @@ def main():
     app_config = load_configuration(file_manager)
 
     parser = LeetcodeParser(config=app_config)
-    output_path = parse_question(parser, raw_url, language, question_formatter, file_manager, app_config)
-    open_generated_file(app_launcher, output_path, language)
-    
-    # Ensure cleanup after execution
-    _ = input("Please 'return' key when done...")
+    try:
+        output_path = parse_question(parser, raw_url, language, question_formatter, file_manager, app_config)
+        open_generated_file(app_launcher, output_path, language)
+        _ = input("Press 'return' when done...")
+    finally:
+        parser.clean_up()
+
     clean_up(exit_code=0)
 
 if __name__ == "__main__":
