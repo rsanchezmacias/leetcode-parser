@@ -4,24 +4,19 @@ A macOS app that scrapes a LeetCode problem and drops a pre-filled starter file 
 
 ## Prerequisites
 
-- Python 3.13+ with Tcl/Tk support
+- Python 3.13+ — if using pyenv, install with Tcl/Tk support:
+    ```bash
+    brew install tcl-tk
+
+    LDFLAGS="-L$(brew --prefix tcl-tk)/lib" \
+    CPPFLAGS="-I$(brew --prefix tcl-tk)/include" \
+    PKG_CONFIG_PATH="$(brew --prefix tcl-tk)/lib/pkgconfig" \
+    PYTHON_CONFIGURE_OPTS="--with-tcltk-includes='-I$(brew --prefix tcl-tk)/include' \
+      --with-tcltk-libs='-L$(brew --prefix tcl-tk)/lib -ltcl8.6 -ltk8.6'" \
+    pyenv install 3.13.0 --force
+    ```
 - Google Chrome + ChromeDriver matching your Chrome version
 - `pip install -r requirements.txt && pip install py2app`
-
-### pyenv + Tcl/Tk (one-time fix)
-
-If `import tkinter` fails, reinstall Python with Tcl/Tk support:
-
-```bash
-brew install tcl-tk
-
-LDFLAGS="-L$(brew --prefix tcl-tk)/lib" \
-CPPFLAGS="-I$(brew --prefix tcl-tk)/include" \
-PKG_CONFIG_PATH="$(brew --prefix tcl-tk)/lib/pkgconfig" \
-PYTHON_CONFIGURE_OPTS="--with-tcltk-includes='-I$(brew --prefix tcl-tk)/include' \
-  --with-tcltk-libs='-L$(brew --prefix tcl-tk)/lib -ltcl8.6 -ltk8.6'" \
-pyenv install 3.13.0 --force
-```
 
 ## Build & Install
 
