@@ -35,18 +35,24 @@ class LanguageSelector:
             print(f"Error clicking language dropdown: {e}")
             return
 
-        # Wait for the language popover to appear
+        # Wait for the language popover to appear.
+        # Match on role="dialog" + data-state="open" — more reliable than the z-modal class.
         try:
-            code_languages_popover = WebDriverWait(driver, 1).until(
-                EC.visibility_of_element_located((By.XPATH, f'//div[contains(@class, "{DOMLabels.CODE_LANGUAGE_MODAL}")]'))
+            code_languages_popover = WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.XPATH, '//div[@role="dialog" and @data-state="open"]'))
             )
         except TimeoutException as e:
             print(f"Timeout waiting for language popover: {e}")
             return
 
-        # Find and click the desired language
+        # Find and click the desired language.
+        # The DOM structure is: div.cursor-pointer > div.flex > div.text-sm (language name)
+        # We find the outer clickable row by matching the inner label text.
         try:
-            code_language_element = code_languages_popover.find_element(By.XPATH, f'//div[contains(text(), "{language_label}")]')
+            code_language_element = code_languages_popover.find_element(
+                By.XPATH,
+                f'.//div[contains(@class, "cursor-pointer") and ./div/div[normalize-space(text())="{language_label}"]]'
+            )
             code_language_element.click()
             time.sleep(1)  # Pause to ensure the language is applied
         except (NoSuchElementException, ElementNotInteractableException) as e:
@@ -56,10 +62,12 @@ class LanguageSelector:
     def build_xpath_query_to_find_code_language_button(self) -> str:
         """
         Constructs the XPath query to find the code language dropdown button.
+        Uses normalize-space(.) to match the full text content of the button,
+        including text in nested child elements.
 
         Returns:
             str: The XPath query string.
         """
-        language_conditions = [f'text()="{language}"' for language in DOMLabels.CODE_LANGUAGES]
+        language_conditions = [f'normalize-space(.)="{language}"' for language in DOMLabels.CODE_LANGUAGES]
         language_conditions_joined = " or ".join(language_conditions)
         return f"//button[{language_conditions_joined}]"

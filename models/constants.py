@@ -32,8 +32,12 @@ class DOMLabels:
     # Modal containing code language options
     CODE_LANGUAGE_MODAL: str = "z-modal"
 
-    # List of supported programming languages
-    CODE_LANGUAGES = ["C++", "Java", "Python", "Python3", "Swift"]
+    # List of supported programming languages (keep in sync with LeetCode's dropdown)
+    CODE_LANGUAGES = [
+        "C++", "Java", "Python", "Python3", "JavaScript", "TypeScript",
+        "C#", "C", "Go", "Kotlin", "Swift", "Rust", "Ruby", "PHP",
+        "Dart", "Scala", "Elixir", "Erlang", "Racket",
+    ]
 
 @dataclass(frozen=True)
 class Configs:
