@@ -60,8 +60,14 @@ class LeetcodeParser:
             LeetcodeAPIException: If the problem can't be fetched or is locked.
         """
         slug = extract_slug(url)
-        cookies = self._cookie_loader()
-        data = self._fetch_question(slug, cookies)
+        cookies = None
+        data = self._fetch_question(slug, None)
+
+        # Only touch Chrome's cookies (and the Keychain) when the problem is Premium and locked
+        if data is not None and data.get("isPaidOnly") and data.get("content") is None:
+            cookies = self._cookie_loader()
+            if cookies is not None:
+                data = self._fetch_question(slug, cookies)
 
         if data is None:
             raise LeetcodeAPIException(f"No LeetCode problem found for '{slug}'. Check the URL.")
@@ -101,6 +107,10 @@ class LeetcodeParser:
                 cookies=cookies,
                 timeout=REQUEST_TIMEOUT_SECONDS,
             )
+        except requests.Timeout:
+            raise LeetcodeAPIException("LeetCode took too long to respond. Try again in a moment.")
+        except requests.ConnectionError:
+            raise LeetcodeAPIException("Could not reach LeetCode. Check your internet connection.")
         except requests.RequestException as e:
             raise LeetcodeAPIException(f"Could not reach LeetCode: {e}")
 
@@ -132,8 +142,9 @@ class LeetcodeParser:
         if cookies is None:
             return (
                 f"'{title}' is a Premium problem and no LeetCode login could be read from Chrome. "
-                "Make sure you're logged into leetcode.com in Chrome and that this app has Full Disk Access "
-                "(System Settings → Privacy & Security → Full Disk Access), then try again."
+                "Make sure you're logged into leetcode.com in Chrome, that this app has Full Disk Access "
+                "(System Settings → Privacy & Security → Full Disk Access), and that you allowed access to "
+                "\"Chrome Safe Storage\" when macOS asked, then try again."
             )
         return (
             f"'{title}' is a Premium problem and your Chrome LeetCode session doesn't have access. "

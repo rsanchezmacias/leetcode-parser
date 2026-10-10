@@ -1,6 +1,6 @@
 # LeetCode Formatter
 
-A macOS app that scrapes a LeetCode problem and drops a pre-filled starter file into a local directory, ready to open in your editor. Supports Python and Swift.
+A macOS app that fetches a LeetCode problem and drops a pre-filled starter file into a local directory, ready to open in your editor. Supports Python and Swift.
 
 ## Prerequisites
 
@@ -25,6 +25,8 @@ python setup_app.py py2app
 cp -r "dist/LeetCode Formatter.app" /Applications/
 ```
 
+After rebuilding, macOS may forget the app's Full Disk Access (and Keychain) permission; re-enable it in System Settings → Privacy & Security → Full Disk Access.
+
 ## First Launch
 
 A folder picker will appear — choose where your LeetCode files should be saved. That's the only setup required. Everything else (config) is handled automatically under `~/Library/Application Support/LeetCodeFormatter/`.
@@ -35,7 +37,7 @@ A folder picker will appear — choose where your LeetCode files should be saved
 2. Select **Python** or **Swift**
 3. Click **Parse Problem**. The file is created and opened.
 
-For Premium problems, stay logged into leetcode.com in Chrome. The first time, macOS asks to allow access to "Chrome Safe Storage"; click **Always Allow**. Because macOS protects Chrome's data, the app (or Terminal, when using the CLI) also needs **Full Disk Access** in System Settings → Privacy & Security → Full Disk Access.
+For Premium problems, stay logged into leetcode.com in Chrome. The first time, macOS asks to allow access to "Chrome Safe Storage"; click **Allow** (you are asked each time a Premium problem is fetched). **Always Allow** stops the prompts but lets any app on the Mac read Chrome's cookie encryption key without asking, so choose it only if you accept that. Because macOS protects Chrome's data, the app (or Terminal, when using the CLI) also needs **Full Disk Access** in System Settings → Privacy & Security → Full Disk Access.
 
 Use **Change** to update the output folder, or **Open in Finder** to open it at any time.
 

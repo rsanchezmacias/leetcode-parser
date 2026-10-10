@@ -39,3 +39,11 @@ def test_url_validator_rejects_non_problem_url():
 
 def test_url_validator_accepts_problem_url():
     assert URLValidator().validate_url("https://leetcode.com/problems/two-sum/") is True
+
+
+@pytest.mark.parametrize("url", [
+    "leetcode.com/problems/two-sum/",
+    "www.leetcode.com/problems/two-sum/",
+])
+def test_validate_url_accepts_scheme_less_and_www(url):
+    assert URLValidator().validate_url(url) is True

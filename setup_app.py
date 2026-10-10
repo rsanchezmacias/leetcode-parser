@@ -95,7 +95,7 @@ DATA_FILES = [
 OPTIONS = {
     "argv_emulation": False,
     "packages": [
-        "requests", "certifi", "browser_cookie3", "Cryptodome", "lz4",
+        "requests", "certifi", "charset_normalizer", "browser_cookie3", "Cryptodome", "lz4",
         "jinja2", "yaml",
         "models", "services", "utility", "errors",
     ],

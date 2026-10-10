@@ -22,8 +22,8 @@ class FakeResponse:
 
 
 class FakeHttp:
-    def __init__(self, response=None, error=None):
-        self.response = response
+    def __init__(self, responses=None, error=None):
+        self.responses = list(responses or [])
         self.error = error
         self.calls = []
 
@@ -31,7 +31,17 @@ class FakeHttp:
         self.calls.append((url, kwargs))
         if self.error:
             raise self.error
-        return self.response
+        return self.responses.pop(0) if len(self.responses) > 1 else self.responses[0]
+
+
+class RecordingLoader:
+    def __init__(self, result=None):
+        self.result = result
+        self.calls = 0
+
+    def __call__(self):
+        self.calls += 1
+        return self.result
 
 
 def question_payload(**overrides):
@@ -50,9 +60,12 @@ def question_payload(**overrides):
     return {"data": {"question": question}}
 
 
-def make_parser(response=None, error=None, cookies=None):
-    http = FakeHttp(response or FakeResponse(payload=question_payload()), error)
-    return LeetcodeParser(cookie_loader=lambda: cookies, http=http), http
+def make_parser(response=None, error=None, cookies=None, responses=None):
+    if responses is None:
+        responses = [response or FakeResponse(payload=question_payload())]
+    http = FakeHttp(responses, error)
+    loader = RecordingLoader(cookies)
+    return LeetcodeParser(cookie_loader=loader, http=http), http, loader
 
 
 def session_jar():
@@ -63,7 +76,7 @@ def session_jar():
 
 
 def test_parses_question_fields():
-    parser, _ = make_parser()
+    parser, _, _ = make_parser()
     question = parser.parse(URL, Language.SWIFT)
     assert question.url == URL
     assert question.title == "1. Two Sum"
@@ -73,13 +86,19 @@ def test_parses_question_fields():
 
 
 def test_picks_python3_snippet_for_python():
-    parser, _ = make_parser()
+    parser, _, _ = make_parser()
     assert parser.parse(URL, Language.PYTHON).code == "class Solution:\n    pass"
 
 
-def test_free_problem_works_without_cookies():
-    parser, http = make_parser(cookies=None)
+def locked():
+    return FakeResponse(payload=question_payload(isPaidOnly=True, content=None, codeSnippets=None))
+
+
+def test_free_problem_never_loads_cookies():
+    parser, http, loader = make_parser(cookies=session_jar())
     parser.parse(URL, Language.SWIFT)
+    assert loader.calls == 0
+    assert len(http.calls) == 1
     url, kwargs = http.calls[0]
     assert url == GRAPHQL_URL
     assert kwargs["json"]["variables"] == {"titleSlug": "two-sum"}
@@ -87,68 +106,86 @@ def test_free_problem_works_without_cookies():
     assert "x-csrftoken" not in kwargs["headers"]
 
 
-def test_sends_chrome_cookies_and_csrf_header():
+def test_premium_retries_with_chrome_cookies_and_csrf_header():
     jar = session_jar()
-    parser, http = make_parser(cookies=jar)
-    parser.parse(URL, Language.SWIFT)
-    _, kwargs = http.calls[0]
+    parser, http, loader = make_parser(responses=[locked(), FakeResponse(payload=question_payload(isPaidOnly=True))], cookies=jar)
+    question = parser.parse(URL, Language.SWIFT)
+    assert question.title == "1. Two Sum"
+    assert loader.calls == 1
+    assert len(http.calls) == 2
+    assert http.calls[0][1]["cookies"] is None
+    _, kwargs = http.calls[1]
     assert kwargs["cookies"] is jar
     assert kwargs["headers"]["x-csrftoken"] == "csrf-value"
 
 
 def test_unknown_problem():
-    parser, _ = make_parser(FakeResponse(payload={"data": {"question": None}}))
+    parser, _, loader = make_parser(FakeResponse(payload={"data": {"question": None}}), cookies=session_jar())
     with pytest.raises(LeetcodeAPIException, match="No LeetCode problem found for 'two-sum'"):
         parser.parse(URL, Language.SWIFT)
+    assert loader.calls == 0
 
 
 def test_premium_without_cookies_asks_to_log_in():
-    locked = question_payload(isPaidOnly=True, content=None, codeSnippets=None)
-    parser, _ = make_parser(FakeResponse(payload=locked), cookies=None)
+    parser, http, loader = make_parser(locked(), cookies=None)
     with pytest.raises(LeetcodeAPIException, match="no LeetCode login could be read from Chrome"):
         parser.parse(URL, Language.SWIFT)
+    assert loader.calls == 1
+    assert len(http.calls) == 1
 
 
 def test_premium_with_cookies_but_no_access():
-    locked = question_payload(isPaidOnly=True, content=None, codeSnippets=None)
-    parser, _ = make_parser(FakeResponse(payload=locked), cookies=session_jar())
+    parser, http, _ = make_parser(locked(), cookies=session_jar())
     with pytest.raises(LeetcodeAPIException, match="doesn't have access"):
         parser.parse(URL, Language.SWIFT)
+    assert len(http.calls) == 2
 
 
 def test_missing_language_snippet():
     only_sql = question_payload(codeSnippets=[{"langSlug": "mysql", "code": "SELECT 1"}])
-    parser, _ = make_parser(FakeResponse(payload=only_sql))
+    parser, _, _ = make_parser(FakeResponse(payload=only_sql))
     with pytest.raises(LeetcodeAPIException, match="no Swift starter code"):
         parser.parse(URL, Language.SWIFT)
 
 
 def test_http_error():
-    parser, _ = make_parser(FakeResponse(status_code=403))
+    parser, _, _ = make_parser(FakeResponse(status_code=403))
     with pytest.raises(LeetcodeAPIException, match="HTTP 403"):
         parser.parse(URL, Language.SWIFT)
 
 
 def test_network_error():
-    parser, _ = make_parser(error=requests.ConnectionError("offline"))
-    with pytest.raises(LeetcodeAPIException, match="Could not reach LeetCode"):
+    parser, _, _ = make_parser(error=requests.ConnectionError("offline"))
+    with pytest.raises(LeetcodeAPIException, match="Could not reach LeetCode. Check your internet connection."):
+        parser.parse(URL, Language.SWIFT)
+
+
+def test_timeout():
+    parser, _, _ = make_parser(error=requests.Timeout("slow"))
+    with pytest.raises(LeetcodeAPIException, match="took too long to respond"):
+        parser.parse(URL, Language.SWIFT)
+
+
+def test_other_request_error():
+    parser, _, _ = make_parser(error=requests.RequestException("weird"))
+    with pytest.raises(LeetcodeAPIException, match="Could not reach LeetCode: weird"):
         parser.parse(URL, Language.SWIFT)
 
 
 def test_non_json_response():
-    parser, _ = make_parser(FakeResponse(json_error=ValueError("not json")))
+    parser, _, _ = make_parser(FakeResponse(json_error=ValueError("not json")))
     with pytest.raises(LeetcodeAPIException, match="unexpected response"):
         parser.parse(URL, Language.SWIFT)
 
 
 def test_graphql_errors():
-    parser, _ = make_parser(FakeResponse(payload={"errors": [{"message": "boom"}]}))
+    parser, _, _ = make_parser(FakeResponse(payload={"errors": [{"message": "boom"}]}))
     with pytest.raises(LeetcodeAPIException, match="LeetCode API error: boom"):
         parser.parse(URL, Language.SWIFT)
 
 
 def test_invalid_url_is_rejected_before_any_request():
-    parser, http = make_parser()
+    parser, http, _ = make_parser()
     with pytest.raises(InvalidInputException):
         parser.parse("https://leetcode.com/problemset/", Language.SWIFT)
     assert http.calls == []
