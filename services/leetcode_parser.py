@@ -121,11 +121,14 @@ class LeetcodeParser:
         if "/accounts/login" in self.driver.current_url:
             return False
 
-        # Sign In button visible in the nav — only present when logged out
+        # Log In / Sign In button visible in the nav — only present when logged out.
+        # Match the navbar button id first, with a text fallback in case LeetCode renames it.
+        lowercase_text = "translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"
         try:
             self.driver.find_element(
                 By.XPATH,
-                "//*[self::a or self::button][contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'sign in')]"
+                f"//*[@id='navbar_sign_in_button'] | "
+                f"//*[self::a or self::button][{lowercase_text}='sign in' or {lowercase_text}='log in']"
             )
             return False
         except NoSuchElementException:
