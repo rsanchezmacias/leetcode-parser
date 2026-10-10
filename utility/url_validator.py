@@ -1,6 +1,7 @@
 from urllib.parse import urlparse
 from errors.exceptions import InvalidInputException
 from models.constants import UserMessages
+from utility.slug_extractor import extract_slug
 
 
 class URLValidator:
@@ -28,6 +29,7 @@ class URLValidator:
             if not is_valid:
                 raise InvalidInputException(UserMessages.INVALID_INPUT_TYPE)
 
+            extract_slug(url)
             return True
         except ValueError:
             raise InvalidInputException(UserMessages.INVALID_INPUT_TYPE)

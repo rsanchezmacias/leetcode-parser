@@ -10,6 +10,7 @@ class UserMessages:
     INVALID_INPUT_SIZE: str = "Please enter a URL for the question you want to answer and a language preference (swift or python)"
     INVALID_INPUT_TYPE: str = "Please enter a valid URL for the question"
     INVALID_INPUT_LANGUAGE: str = "Please provide a valid language (-s for swift, or -p for python)"
+    INVALID_PROBLEM_URL: str = "Please enter a LeetCode problem URL, e.g. https://leetcode.com/problems/two-sum/"
     VALID_INPUT_EXAMPLE: str = "Example: python -s main.py www.valid_question_url.com"
 
 @dataclass(frozen=True)

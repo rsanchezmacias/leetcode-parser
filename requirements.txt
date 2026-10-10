@@ -1,4 +1,6 @@
 Jinja2==3.1.5
 Pillow==12.1.1
 PyYAML==6.0.2
-selenium==4.27.1
+requests==2.32.3
+browser-cookie3==0.20.1
+pytest==8.3.4
