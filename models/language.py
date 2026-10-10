@@ -9,16 +9,16 @@ class Language(Enum):
     PYTHON = "-p"
     SWIFT = "-s"
 
-    def site_language(self):
+    def snippet_slug(self):
         """
-        Returns the site-specific language name for the current language.
+        Returns LeetCode's identifier for this language in a question's codeSnippets.
 
         Returns:
-            str: The site language name.
+            str: The language slug, e.g. "python3".
         """
         mapping = {
-            Language.PYTHON: "Python3",
-            Language.SWIFT: "Swift"
+            Language.PYTHON: "python3",
+            Language.SWIFT: "swift"
         }
         return mapping.get(self)
 

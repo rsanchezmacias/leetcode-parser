@@ -10,3 +10,7 @@ class FilePathNotFound(Exception):
 class FailedToOpenException(Exception):
     """ Exception raised when the app fails to open the requested file """
     pass 
+
+class LeetcodeAPIException(Exception):
+    """ Exception raised when a problem can't be fetched from LeetCode """
+    pass

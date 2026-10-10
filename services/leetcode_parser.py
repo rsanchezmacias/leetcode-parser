@@ -1,172 +1,152 @@
-import time
+from http.cookiejar import CookieJar
+from typing import Callable
 
-from models.constants import DOMLabels
-from models.driver_config import AppConfig
+import requests
+
+from errors.exceptions import LeetcodeAPIException
 from models.language import Language
 from models.question import Question
-from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from services.language_selector import LanguageSelector
+from services.session_cookies import load_leetcode_cookies
+from utility.html_to_text import html_to_text
+from utility.slug_extractor import extract_slug
+
+GRAPHQL_URL = "https://leetcode.com/graphql"
+REQUEST_TIMEOUT_SECONDS = 15
+
+QUESTION_QUERY = """
+query questionData($titleSlug: String!) {
+  question(titleSlug: $titleSlug) {
+    questionFrontendId
+    title
+    difficulty
+    isPaidOnly
+    content
+    codeSnippets { langSlug code }
+  }
+}
+"""
 
 
 class LeetcodeParser:
     """
-    Parses question data from a LeetCode problem page using Selenium.
+    Fetches question data from LeetCode's GraphQL API.
     """
 
-    def __init__(self, config: AppConfig, auth_prompt_fn=None):
+    def __init__(self, cookie_loader: Callable[[], CookieJar | None] = load_leetcode_cookies, http=requests):
         """
-        Initializes the LeetcodeParser with browser configuration.
+        Initializes the LeetcodeParser.
 
         Args:
-            config (AppConfig): Configuration object containing user data and profile information.
-            auth_prompt_fn (callable, optional): Called when the user needs to log in manually.
-                Should block until the user has logged in. Defaults to a CLI input() prompt.
+            cookie_loader (callable, optional): Returns leetcode.com cookies for Premium access, or None.
+                Defaults to reading them from Chrome.
+            http (optional): Object with a requests-compatible post(). Defaults to the requests module.
         """
-        # Initialize browser options
-        options = webdriver.ChromeOptions()
-        options.add_argument(f"--user-data-dir={config.user_data_directory}")
-        options.add_argument(f"--profile-directory={config.profile_name}")
-
-        # Initialize WebDriver
-        self.driver = webdriver.Chrome(options=options)
-        self.driver.implicitly_wait(0.5)
-
-        # Auth prompt — callers can inject a GUI dialog; falls back to CLI input()
-        self._auth_prompt_fn = auth_prompt_fn or (
-            lambda: input("Press Enter here once you are logged in...")
-        )
-
-        # Utility helper
-        self.language_selector = LanguageSelector()
+        self._cookie_loader = cookie_loader
+        self._http = http
 
     def parse(self, url: str, language: Language) -> Question:
         """
-        Parses a LeetCode problem page and extracts question details.
+        Fetches a LeetCode problem and extracts question details.
 
         Args:
             url (str): The URL of the LeetCode problem page.
-            language (Language): The programming language for the code editor.
+            language (Language): The language whose starter code to use.
 
         Returns:
-            Question: A populated Question object containing the problem details.
+            Question: A populated Question object, with title formatted as "<number>. <title>".
 
         Raises:
-            NoSuchElementException: If required elements are not found on the page.
+            InvalidInputException: If the URL is not a LeetCode problem URL.
+            LeetcodeAPIException: If the problem can't be fetched or is locked.
         """
+        slug = extract_slug(url)
+        cookies = self._cookie_loader()
+        data = self._fetch_question(slug, cookies)
+
+        if data is None:
+            raise LeetcodeAPIException(f"No LeetCode problem found for '{slug}'. Check the URL.")
+
+        # Premium problems come back with content=None unless the session has access
+        if data.get("content") is None:
+            raise LeetcodeAPIException(self._locked_message(data.get("title") or slug, cookies))
+
         question = Question()
-
-        # Open the problem page
-        self.driver.get(url)
-
-        # Ensure the user is logged in before proceeding
-        self._ensure_logged_in(url)
-
-        # Set the desired programming language
-        self.language_selector.swap_to_correct_language(driver=self.driver, language=language)
-
-        # Extract title
-        try:
-            title_element = self.driver.find_element(By.XPATH, f"//div[contains(@class, '{DOMLabels.TITLE}')]")
-            question.title = title_element.text
-        except NoSuchElementException:
-            raise NoSuchElementException("Failed to locate the question title.")
-
-        # Extract difficulty
-        try:
-            difficulty_element = self.driver.find_element(By.XPATH, f"//div[contains(@class, '{DOMLabels.DIFFICULTY}')]")
-            question.difficulty = difficulty_element.text
-        except NoSuchElementException:
-            raise NoSuchElementException("Failed to locate the question difficulty.")
-
-        # Extract description content
-        question.description = self.get_description_content()
-
-        # Extract code template
-        try:
-            code_element = self.driver.find_element(By.CLASS_NAME, DOMLabels.CODE_LINES_CONTENT)
-            question.code = code_element.text
-        except NoSuchElementException:
-            raise NoSuchElementException("Failed to locate the code editor content.")
-
+        question.url = url
+        question.title = f"{data['questionFrontendId']}. {data['title']}"
+        question.difficulty = data["difficulty"]
+        question.description = html_to_text(data["content"])
+        question.code = self._starter_code(data, language)
         return question
 
-    def get_description_content(self) -> str:
+    def _fetch_question(self, slug: str, cookies: CookieJar | None) -> dict | None:
         """
-        Extracts the problem description content from the page.
+        Runs the GraphQL query for a problem.
 
         Returns:
-            str: The description content as plain text.
-
-        Raises:
-            NoSuchElementException: If the description element is not found.
+            dict | None: The "question" object, or None if LeetCode has no such problem.
         """
+        headers = {
+            "Content-Type": "application/json",
+            "Referer": f"https://leetcode.com/problems/{slug}/",
+        }
+        csrf_token = self._cookie_value(cookies, "csrftoken")
+        if csrf_token:
+            headers["x-csrftoken"] = csrf_token
+
         try:
-            description_element = self.driver.find_element(By.XPATH, f"//div[@data-track-load='{DOMLabels.DESCRIPTION_BODY}']")
-            return description_element.text
-        except NoSuchElementException:
-            raise NoSuchElementException("Failed to locate the problem description.")
-
-    def _is_logged_in(self) -> bool:
-        """
-        Checks whether the user is currently logged into LeetCode by looking
-        for a login-page URL redirect or a visible Sign In button in the nav.
-
-        Returns:
-            bool: True if logged in, False otherwise.
-        """
-        # Redirected to the login page
-        if "/accounts/login" in self.driver.current_url:
-            return False
-
-        # Log In / Sign In button visible in the nav — only present when logged out.
-        # Match the navbar button id first, with a text fallback in case LeetCode renames it.
-        lowercase_text = "translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"
-        try:
-            self.driver.find_element(
-                By.XPATH,
-                f"//*[@id='navbar_sign_in_button'] | "
-                f"//*[self::a or self::button][{lowercase_text}='sign in' or {lowercase_text}='log in']"
+            response = self._http.post(
+                GRAPHQL_URL,
+                json={"query": QUESTION_QUERY, "variables": {"titleSlug": slug}},
+                headers=headers,
+                cookies=cookies,
+                timeout=REQUEST_TIMEOUT_SECONDS,
             )
-            return False
-        except NoSuchElementException:
-            return True
+        except requests.RequestException as e:
+            raise LeetcodeAPIException(f"Could not reach LeetCode: {e}")
 
-    def _ensure_logged_in(self, url: str) -> None:
-        """
-        If not logged in, pauses and prompts the user to log in manually
-        in the open Chrome window, then re-navigates to the problem URL.
+        if response.status_code != 200:
+            raise LeetcodeAPIException(f"LeetCode returned HTTP {response.status_code}. Try again in a moment.")
 
-        Args:
-            url (str): The original problem URL to return to after login.
+        try:
+            payload = response.json()
+        except ValueError:
+            raise LeetcodeAPIException("LeetCode returned an unexpected response. Try again in a moment.")
 
-        Raises:
-            Exception: If the user is still not logged in after the manual login attempt.
-        """
-        if self._is_logged_in():
-            return
+        if payload.get("errors"):
+            message = payload["errors"][0].get("message", "unknown error")
+            raise LeetcodeAPIException(f"LeetCode API error: {message}")
 
-        print("\n⚠️  Not logged in to LeetCode.")
-        print("Please log in inside the Chrome window that just opened.")
-        self._auth_prompt_fn()
+        return (payload.get("data") or {}).get("question")
 
-        # Navigate back to the problem and wait for the page to settle
-        self.driver.get(url)
-        WebDriverWait(self.driver, 10).until(
-            lambda d: "/accounts/login" not in d.current_url
+    def _starter_code(self, data: dict, language: Language) -> str:
+        """Returns the starter code for the language, or raises if LeetCode has none."""
+        for snippet in data.get("codeSnippets") or []:
+            if snippet.get("langSlug") == language.snippet_slug():
+                return snippet["code"]
+        raise LeetcodeAPIException(
+            f"'{data['title']}' has no {language.name.capitalize()} starter code on LeetCode."
         )
 
-        if not self._is_logged_in():
-            self.clean_up()
-            raise Exception(
-                "Still not logged in after manual login. "
-                "Please re-run the script and try again."
+    def _locked_message(self, title: str, cookies: CookieJar | None) -> str:
+        """Explains why a Premium problem's content wasn't returned."""
+        if cookies is None:
+            return (
+                f"'{title}' is a Premium problem and no LeetCode login could be read from Chrome. "
+                "Make sure you're logged into leetcode.com in Chrome and that this app has Full Disk Access "
+                "(System Settings → Privacy & Security → Full Disk Access), then try again."
             )
+        return (
+            f"'{title}' is a Premium problem and your Chrome LeetCode session doesn't have access. "
+            "The session may have expired or the account may not have Premium. "
+            "Log into leetcode.com in Chrome again, then try again."
+        )
 
-    def clean_up(self):
-        """
-        Closes the WebDriver and cleans up resources.
-        """
-        self.driver.quit()
+    @staticmethod
+    def _cookie_value(cookies: CookieJar | None, name: str) -> str | None:
+        """Returns a cookie's value from the jar, or None."""
+        if cookies is None:
+            return None
+        for cookie in cookies:
+            if cookie.name == name:
+                return cookie.value
+        return None
