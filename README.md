@@ -15,7 +15,7 @@ A macOS app that scrapes a LeetCode problem and drops a pre-filled starter file 
       --with-tcltk-libs='-L$(brew --prefix tcl-tk)/lib -ltcl8.6 -ltk8.6'" \
     pyenv install 3.13.0 --force
     ```
-- Google Chrome + ChromeDriver matching your Chrome version
+- Google Chrome, logged into leetcode.com, for Premium problems (optional)
 - `pip install -r requirements.txt && pip install py2app`
 
 ## Build & Install
@@ -27,15 +27,15 @@ cp -r "dist/LeetCode Formatter.app" /Applications/
 
 ## First Launch
 
-A folder picker will appear — choose where your LeetCode files should be saved. That's the only setup required. Everything else (Chrome profile, config) is handled automatically under `~/Library/Application Support/LeetCodeFormatter/`.
+A folder picker will appear — choose where your LeetCode files should be saved. That's the only setup required. Everything else (config) is handled automatically under `~/Library/Application Support/LeetCodeFormatter/`.
 
 ## Usage
 
 1. Paste a LeetCode problem URL
 2. Select **Python** or **Swift**
-3. Click **Parse Problem** — the status log shows live progress
-4. If not logged in, a dialog appears — log in in the Chrome window then click **I'm logged in — Continue**
-5. When done, click **Close Chrome**
+3. Click **Parse Problem**. The file is created and opened.
+
+For Premium problems, stay logged into leetcode.com in Chrome. The first time, macOS asks to allow access to "Chrome Safe Storage"; click **Always Allow**. Because macOS protects Chrome's data, the app (or Terminal, when using the CLI) also needs **Full Disk Access** in System Settings → Privacy & Security → Full Disk Access.
 
 Use **Change** to update the output folder, or **Open in Finder** to open it at any time.
 

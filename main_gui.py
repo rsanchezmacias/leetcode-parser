@@ -38,11 +38,9 @@ class App(tk.Tk):
         self._file_manager.set_working_directory()
 
         self._log_queue: queue.Queue = queue.Queue()
-        self._active_parser: LeetcodeParser | None = None
         self._app_config = None
         self._build_ui()
         self._poll_log()
-        self.protocol("WM_DELETE_WINDOW", self._on_quit)
         # Check config after the window is fully drawn
         self.after(200, self._check_questions_dir)
 
@@ -150,64 +148,6 @@ class App(tk.Tk):
             command=self._on_parse,
         ))
 
-    def _set_done(self):
-        """Switch button to 'Close Chrome' after a successful parse — main thread only."""
-        self._parse_btn.config(
-            state="normal",
-            text="Close Chrome",
-            command=self._on_close_chrome,
-        )
-
-    def _on_close_chrome(self):
-        """Close the Selenium Chrome window and reset the button."""
-        if self._active_parser:
-            self._active_parser.clean_up()
-            self._active_parser = None
-        self._parse_btn.config(
-            text="Parse Problem",
-            command=self._on_parse,
-        )
-
-    def _on_quit(self):
-        """Clean up Chrome if still open when the window is closed."""
-        if self._active_parser:
-            self._active_parser.clean_up()
-        self.destroy()
-
-    # ------------------------------------------------------------------ #
-    #  Auth dialog (shown when Chrome opens not-logged-in)
-    # ------------------------------------------------------------------ #
-
-    def _show_auth_dialog(self, done_event: threading.Event):
-        """Show a modal dialog asking the user to log in, then set done_event."""
-        def _build():
-            dlg = tk.Toplevel(self)
-            dlg.title("Login Required")
-            dlg.resizable(False, False)
-            dlg.grab_set()
-            dlg.lift()
-            dlg.focus_force()
-
-            ttk.Label(
-                dlg,
-                text="⚠️  Not logged in to LeetCode.\n\n"
-                     "Please log in in the Chrome window\n"
-                     "that just opened, then click Continue.",
-                font=("Helvetica", 13),
-                justify="center",
-                padding=(24, 20, 24, 8),
-            ).pack()
-
-            def _continue():
-                dlg.destroy()
-                done_event.set()
-
-            ttk.Button(dlg, text="I'm logged in — Continue",
-                       command=_continue, padding=(20, 8)).pack(pady=(4, 20))
-            dlg.protocol("WM_DELETE_WINDOW", _continue)
-
-        self._dispatch(_build)
-
     # ------------------------------------------------------------------ #
     #  Output folder management
     # ------------------------------------------------------------------ #
@@ -279,27 +219,9 @@ class App(tk.Tk):
             self._set_busy(False)
             return
 
-        # Build an auth prompt that blocks the background thread until the
-        # GUI dialog is dismissed.
-        auth_event = threading.Event()
-
-        def auth_prompt_fn():
-            self._log_msg("⚠️  Not logged in — showing login dialog…")
-            self._show_auth_dialog(auth_event)
-            auth_event.wait()
-            self._log_msg("Continuing after login…")
-
-        self._log_msg("🌐 Opening Chrome…")
         try:
-            parser = LeetcodeParser(config=app_config, auth_prompt_fn=auth_prompt_fn)
-        except Exception as e:
-            self._log_msg(f"❌ Failed to launch browser: {e}")
-            self._set_busy(False)
-            return
-
-        try:
-            self._log_msg("🔍 Navigating to problem…")
-            raw_question = parser.parse(url=url, language=language)
+            self._log_msg("🔍 Fetching problem from LeetCode…")
+            raw_question = LeetcodeParser().parse(url=url, language=language)
 
             self._log_msg("✏️  Formatting question…")
             formatted_question = self._question_formatter.format_question(raw_question)
@@ -318,13 +240,9 @@ class App(tk.Tk):
             except Exception as e:
                 self._log_msg(f"⚠️  Could not open file automatically: {e}")
 
-            # Keep Chrome open — hand off to the user via the Close Chrome button
-            self._active_parser = parser
-            self._dispatch(self._set_done)
-
         except Exception as e:
             self._log_msg(f"❌ Error: {e}")
-            parser.clean_up()
+        finally:
             self._set_busy(False)
 
 

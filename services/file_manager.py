@@ -18,10 +18,8 @@ PLACEHOLDER_QUESTIONS_DIR = "/path/to/store/questions"
 # Default config written on first launch of the app bundle.
 DEFAULT_CONFIG_TEMPLATE = """\
 config:
-  user_data_dir: "{data_dir}/driver_profile"
-  profile_directory: "SeleniumProfile"
   questions_home_directory: "{placeholder}"
-""".format(data_dir=BUNDLE_DATA_DIR, placeholder=PLACEHOLDER_QUESTIONS_DIR)
+""".format(placeholder=PLACEHOLDER_QUESTIONS_DIR)
 
 
 def _is_bundled() -> bool:
@@ -71,7 +69,7 @@ class FileManager:
         config_path = self._config_path()
         if not os.path.exists(config_path):
             with open(config_path, "w") as f:
-                f.write(DEFAULT_CONFIG_TEMPLATE.format(data_dir=BUNDLE_DATA_DIR))
+                f.write(DEFAULT_CONFIG_TEMPLATE)
 
     # ------------------------------------------------------------------ #
     #  Public API
@@ -101,10 +99,6 @@ class FileManager:
 
         configuration = data.get(Configs.CONFIG_FIELD, {})
         app_config = AppConfig()
-        app_config.user_data_directory = os.path.expanduser(
-            configuration.get(Configs.CONFIG_DRIVER_USER_DATA_FIELD, "")
-        )
-        app_config.profile_name = configuration.get(Configs.CONFIG_DRIVER_PROFILE_NAME_FIELD, "")
         app_config.questions_path_directory = os.path.expanduser(
             configuration.get(Configs.CONFIG_QUESTIONS_HOME_PATH_FIELD, "")
         )
