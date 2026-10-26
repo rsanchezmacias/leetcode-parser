@@ -1,0 +1,1 @@
+leetcode_formatter is a Python CLI tool that automates the process of setting up a local coding file from a LeetCode problem page. You run it with a language flag and URL, it fetches the problem from LeetCode's GraphQL API (using your Chrome LeetCode login for Premium problems), and drops a pre-filled template file into a local directory
