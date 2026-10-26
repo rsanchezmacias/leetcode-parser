@@ -9,13 +9,7 @@ _PROBLEM_PATH = re.compile(r"^/problems/([a-z0-9-]+)(?:/|$)")
 
 def extract_slug(url: str) -> str:
     """
-    Extracts the problem slug from a LeetCode problem URL.
-
-    Args:
-        url (str): e.g. "https://leetcode.com/problems/two-sum/description/?envType=…"
-
-    Returns:
-        str: The slug, e.g. "two-sum".
+    Extracts the problem slug (e.g. "two-sum") from a LeetCode problem URL.
 
     Raises:
         InvalidInputException: If the URL is not a LeetCode problem URL.

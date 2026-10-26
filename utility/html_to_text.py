@@ -6,10 +6,7 @@ BLOCK_TAGS = {"p", "div", "pre", "ul", "ol", "table", "tr", "h1", "h2", "h3", "h
 
 
 class _TextExtractor(HTMLParser):
-    """
-    Collects readable text from LeetCode description HTML.
-    Whitespace is collapsed everywhere except inside <pre> blocks.
-    """
+    """Collects text from description HTML, collapsing whitespace outside <pre> blocks."""
 
     def __init__(self):
         super().__init__(convert_charrefs=True)
@@ -52,15 +49,7 @@ class _TextExtractor(HTMLParser):
 
 
 def html_to_text(html: str) -> str:
-    """
-    Converts a LeetCode problem description from HTML to plain text.
-
-    Args:
-        html (str): The description HTML returned by LeetCode's GraphQL API.
-
-    Returns:
-        str: Readable plain text with paragraphs separated by a blank line.
-    """
+    """Converts a LeetCode description from HTML to plain text."""
     extractor = _TextExtractor()
     extractor.feed(html)
     extractor.close()

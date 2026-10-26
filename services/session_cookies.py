@@ -13,15 +13,7 @@ LEETCODE_DOMAIN = "leetcode.com"
 
 
 def chrome_cookie_files(chrome_dir: str = CHROME_DIR) -> list[str]:
-    """
-    Lists the cookie database of every Chrome profile, "Default" first.
-
-    Args:
-        chrome_dir (str): Chrome's user data directory.
-
-    Returns:
-        list[str]: Paths to existing cookie databases.
-    """
+    """Lists the cookie database of every Chrome profile, "Default" first."""
     profiles = [os.path.join(chrome_dir, "Default")] + sorted(glob.glob(os.path.join(chrome_dir, "Profile *")))
 
     cookie_files = []
@@ -46,18 +38,8 @@ def load_leetcode_cookies(
     loader: Callable[[str], CookieJar] | None = None,
 ) -> CookieJar | None:
     """
-    Finds the user's LeetCode session in Chrome.
-
-    The first time this runs, macOS asks permission to read "Chrome Safe Storage"
-    from the Keychain. Any failure is treated as "not logged in" so that free
-    problems keep working.
-
-    Args:
-        cookie_files (list[str], optional): Cookie databases to search. Defaults to all Chrome profiles.
-        loader (callable, optional): Reads one cookie database. Defaults to browser_cookie3.
-
-    Returns:
-        CookieJar | None: leetcode.com cookies from the first profile with a session, or None.
+    Finds the user's LeetCode session in Chrome, or None if there isn't one.
+    Any read failure counts as "not logged in", so free problems keep working.
     """
     if cookie_files is None:
         cookie_files = chrome_cookie_files()

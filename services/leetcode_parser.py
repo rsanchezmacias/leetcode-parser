@@ -28,32 +28,27 @@ query questionData($titleSlug: String!) {
 
 
 class LeetcodeParser:
-    """
-    Fetches question data from LeetCode's GraphQL API.
-    """
+    """Fetches question data from LeetCode's GraphQL API."""
 
     def __init__(self, cookie_loader: Callable[[], CookieJar | None] = load_leetcode_cookies, http=requests):
         """
-        Initializes the LeetcodeParser.
-
         Args:
             cookie_loader (callable, optional): Returns leetcode.com cookies for Premium access, or None.
-                Defaults to reading them from Chrome.
-            http (optional): Object with a requests-compatible post(). Defaults to the requests module.
+            http (optional): Object with a requests-compatible post().
         """
         self._cookie_loader = cookie_loader
         self._http = http
 
     def parse(self, url: str, language: Language) -> Question:
         """
-        Fetches a LeetCode problem and extracts question details.
+        Fetches a LeetCode problem.
 
         Args:
-            url (str): The URL of the LeetCode problem page.
+            url (str): The LeetCode problem URL.
             language (Language): The language whose starter code to use.
 
         Returns:
-            Question: A populated Question object, with title formatted as "<number>. <title>".
+            Question: The populated question.
 
         Raises:
             InvalidInputException: If the URL is not a LeetCode problem URL.
@@ -85,12 +80,7 @@ class LeetcodeParser:
         return question
 
     def _fetch_question(self, slug: str, cookies: CookieJar | None) -> dict | None:
-        """
-        Runs the GraphQL query for a problem.
-
-        Returns:
-            dict | None: The "question" object, or None if LeetCode has no such problem.
-        """
+        """Runs the GraphQL query; returns the "question" object, or None if there is no such problem."""
         headers = {
             "Content-Type": "application/json",
             "Referer": f"https://leetcode.com/problems/{slug}/",

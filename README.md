@@ -25,7 +25,7 @@ python setup_app.py py2app
 cp -r "dist/LeetCode Formatter.app" /Applications/
 ```
 
-After rebuilding, macOS may forget the app's Full Disk Access (and Keychain) permission; re-enable it in System Settings → Privacy & Security → Full Disk Access.
+After rebuilding, macOS may reset the app's Full Disk Access; re-enable it in System Settings.
 
 ## First Launch
 
@@ -37,7 +37,7 @@ A folder picker will appear — choose where your LeetCode files should be saved
 2. Select **Python** or **Swift**
 3. Click **Parse Problem**. The file is created and opened.
 
-For Premium problems, stay logged into leetcode.com in Chrome. The first time, macOS asks to allow access to "Chrome Safe Storage"; click **Allow** (you are asked each time a Premium problem is fetched). **Always Allow** stops the prompts but lets any app on the Mac read Chrome's cookie encryption key without asking, so choose it only if you accept that. Because macOS protects Chrome's data, the app (or Terminal, when using the CLI) also needs **Full Disk Access** in System Settings → Privacy & Security → Full Disk Access.
+For Premium problems, stay logged into leetcode.com in Chrome. macOS will ask to allow access to "Chrome Safe Storage" — click **Allow** (**Always Allow** lets any app read Chrome's cookie key, so use it with care). The app (or Terminal, for the CLI) also needs **Full Disk Access** in System Settings → Privacy & Security.
 
 Use **Change** to update the output folder, or **Open in Finder** to open it at any time.
 

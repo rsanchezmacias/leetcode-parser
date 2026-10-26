@@ -11,7 +11,7 @@ class Language(Enum):
 
     def snippet_slug(self):
         """
-        Returns LeetCode's identifier for this language in a question's codeSnippets.
+        Returns LeetCode's codeSnippets identifier for the current language.
 
         Returns:
             str: The language slug, e.g. "python3".
